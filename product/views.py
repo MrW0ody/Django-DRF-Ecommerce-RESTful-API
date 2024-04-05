@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -41,12 +42,25 @@ class ProductViewSet(viewsets.ViewSet):
     A simple Viewset for viewing all products
     """
 
-    queryset = Product.objects.isactive()
+    queryset = Product.objects.all().isactive()
     lookup_field = 'slug'
 
     def retrieve(self, request, slug=None):
-        serializer = ProductSerializer(Product.objects.filter(slug=slug), many=True)
-        return Response(serializer.data)
+        serializer = ProductSerializer(
+            Product.objects.filter(slug=slug)
+            .select_related("category", "brand").prefetch_related(Prefetch('product_line'))
+            .prefetch_related(Prefetch("product_line__product_image")),
+            many=True,
+        )
+        data = Response(serializer.data)
+
+        q = list(connection.queries)
+        print(len(q))
+        for qs in q:
+            sqlformatted = format(str(qs["sql"]), reindent=True)
+            print(highlight(sqlformatted, SqlLexer(), TerminalFormatter()))
+
+        return data
 
     @extend_schema(responses=ProductSerializer)
     def list(self, request):

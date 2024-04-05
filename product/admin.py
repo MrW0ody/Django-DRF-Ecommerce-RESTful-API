@@ -1,36 +1,45 @@
 from django.contrib import admin
-from product.models import Category, Product, Brand, ProductLine
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 
-"""
-admin.site.register(Category)
-admin.site.register(ProductLine)
-admin.site.register(Brand)
-"""
+from .models import Brand, Category, Product, ProductImage, ProductLine
 
 
-class ProductLineInline(admin.TabularInline):
+class EditLinkInline(object):
+    def edit(self, instance):
+        url = reverse(
+            f"admin:{instance._meta.app_label}_{instance._meta.model_name}_change",
+            args=[instance.pk],
+        )
+        if instance.pk:
+            link = mark_safe('<a href="{u}">edit</a>'.format(u=url))
+            return link
+        else:
+            return ""
+
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+
+
+class ProductLineInline(EditLinkInline, admin.TabularInline):
     model = ProductLine
+    readonly_fields = ("edit",)
 
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'parent']
-
-
-@admin.register(Brand)
-class BrandAdmin(admin.ModelAdmin):
-    list_display = ['name']
-
-
-@admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'description', 'is_digital', 'is_active']
-    list_filter = ['is_digital', 'is_active']
-    search_fields = ['name', 'slug', 'description']
-    inlines = [ProductLineInline]
+    inlines = [
+        ProductLineInline,
+    ]
 
 
-@admin.register(ProductLine)
 class ProductLineAdmin(admin.ModelAdmin):
-    list_display = ['price', 'sku', 'stock_qty', 'is_active']
-    list_filter = ['price', 'is_active']
+    inlines = [
+        ProductImageInline,
+    ]
+
+
+admin.site.register(ProductLine, ProductLineAdmin)
+admin.site.register(Product, ProductAdmin)
+admin.site.register(Category)
+admin.site.register(Brand)
