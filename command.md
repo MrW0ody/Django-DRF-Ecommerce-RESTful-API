@@ -11,3 +11,9 @@
 
 ## Run coverage in terminal
         pytest --cov
+
+## workflow creating all things in database
+- create category
+- add attribute
+- add attribute values
+- product type
