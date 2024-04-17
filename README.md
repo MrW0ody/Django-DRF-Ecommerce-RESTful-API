@@ -1,3 +1,1 @@
-# During development
-
-## RESTful api for ecommerce
+# RESTful api for ecommerce
